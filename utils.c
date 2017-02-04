@@ -30,8 +30,7 @@ int get_size_byte(char *param)
 	}else if (strcmp(unit, "KB") == 0)
 	{
 		size_byte = num * KB;
-	}else
-	{
+	}else	{
 		fprintf(stderr, "<block size>: unit must be 'MB' or 'KB'. \n");
 		return (-1);
 	}

@@ -48,7 +48,7 @@ void print_records(Record*records, int n){
 	int i;
 	
 	for (i=0; i<n; i++){
-		printf("%s,%s\n",records->uid1, records->uid2);
+		printf("%d,%d\n",records->uid1, records->uid2);
 		records++;
 	}
 }
