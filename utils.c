@@ -51,3 +51,11 @@ void print_records(Record*records, int n){
 		records++;
 	}
 }
+
+// Get size of file
+int get_file_size(FILE* file) {
+	fseek(file, 0L, SEEK_END);
+	int filesize = ftell(file);
+	rewind(file);
+	return filesize;
+}

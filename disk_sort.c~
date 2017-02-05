@@ -19,69 +19,52 @@ int compare (const void *a, const void *b) {
  int b_f = ((const struct record*)b)->uid2;
  return (a_f - b_f);
 }
-//Return a list of records in the given file
-Record* read_blocks_routine(FILE* fp_read, int block_size, int num_blocks){
+//Read a chunk of records from file given chunk_size
+Record* read_records(FILE* fp_read, int block_size, int chunk_size){
 	//int total_rec_in_RAM;
-	Record *buffer = NULL;
-	Record *records_chunk = malloc(block_size*num_blocks);
+	Record *buffer = (Record*)malloc(block_size);
+	Record *records_chunk = (Record*)malloc(chunk_size);
 	Record *curr_record = records_chunk;
-	int current_block = 0;
-	/* get the size of file */
-	if ( fseek(fp_read, 0L, SEEK_END) != 0 ){
-		fprintf(stderr, "Seek end of file failed. \n");
-	}
-	long len_file = ftell(fp_read);
-	/* calculate number of record in total */
-	if ( len_file == -1L ){
-		fprintf(stderr, "ftell \n");
-	}else{
-		/* ceiling */
-		//total_rec_in_RAM = 1 + (len_file - 1) / sizeof(Record);
-	}
-	/* malloc buffer */
-
-	/* back to start */
-	if ( fseek(fp_read, 0L, SEEK_SET) != 0 ){
-		fprintf(stderr, "Seek start of file failed. \n");
-	}
+	int block_count = 0;
+	int nblocks = (int)chunk_size/block_size;
 	/* read into RAM */
-	if (!(buffer = malloc(block_size)) ){
-		fprintf(stderr, "Calloc buffer failed. \n");
+	if (!(buffer = (Record*)malloc(block_size)) ){
+		fprintf(stderr, "malloc buffer failed. \n");
 	}
-	while(current_block < num_blocks && fread(buffer, sizeof(Record), floor(block_size/sizeof(Record)) , fp_read)){
+	//printf("%d\n", block_count);
+	while((block_count <= nblocks) && fread(buffer, sizeof(Record), block_size/sizeof(Record), fp_read)){
+		//printf("nrecs: %d\n", sizeof(Record));
+		int nrecs = block_size/sizeof(Record);
+		if((block_count == nblocks) && (chunk_size%block_size != 0)){
+			nrecs = (chunk_size%block_size)/sizeof(Record);
+		}
 		int i;
-		for(i=0; i<floor(block_size/sizeof(Record)); i++){
-			if((buffer[i].uid1==0) && (buffer[i].uid2==0)) break;
+
+		for(i=0; i<nrecs; i++){
+			//if(((buffer[i].uid1==0) && (buffer[i].uid2==0))|| (count_rec >= num_rec)) break;
 			curr_record->uid1 = buffer[i].uid1;
 			curr_record->uid2 = buffer[i].uid2;
 			curr_record++;
-			
 		}
-		//printf("%d, %d\n",records_chunk->uid1, records_chunk->uid2);
-		current_block++;
-		free(buffer);
-		
-		if ( (buffer = calloc(floor(num_blocks*block_size/sizeof(Record)) , sizeof(Record))) == NULL ){
-		fprintf(stderr, "Calloc buffer failed. \n");
-		break;
-		}
-		
-	}
-	/*if ( num_rec_read != total_rec_in_RAM ){
-		fprintf(stderr, "Reading records failed. \n");
-	} */
-	
+		//printf("%d, %d\n",buffer->uid1, buffer->uid2);
+		block_count++;
+	}	
+	free(buffer);
 	return records_chunk;
 }
 
 int main(int argc, char* argv[]){
 	FILE* fp_read;
+	FILE* fp_write;
 	Record *buffer;
-	char *file_name;
-	int block_size;
-	int mem_size;
-	//int k;
-
+	char *file_name = 0;
+	int block_size = 0;
+	int mem_size = 0;
+	int k = 0; //this will be file size div memory
+	int file_size;
+	int nrec = 0;
+	int chunk_size = 0;
+	
 	if(argc != 4){
 		fprintf(stderr,"Insufficient Arguments : write_blocks_seq <input filename> <memory Size> <block size>.\n");
 		return (-1);
@@ -95,14 +78,43 @@ int main(int argc, char* argv[]){
 		fprintf(stderr,"<block size> and <memory size> are required to be integers greater than one.\n");
 		return (-1);
 	}
+	if((block_size > mem_size)){
+		fprintf(stderr,"block size must not be greater than memory size.\n");
+		return (-1);
+	}
 	if ( !( fp_read = fopen(file_name, "rb") ) ){
 		fprintf(stderr, "Could not open file \"trunc%s\" for reading. \n", argv[1]);
 		return (-1);
 	}
+	if ( !( fp_write = fopen ( "sortedrecords.dat" , "wb" ) ) )
+	{
+		fprintf(stderr, "Could not open file \"%s\" for writing. \n", "sortedrecords.dat");
+		return (-1);
+	}
 
-	buffer = read_blocks_routine(fp_read, block_size, 2);
-	qsort (buffer, 10, sizeof(Record), compare);
-	//printf("%d, %d\n",buffer->uid1, buffer->uid2);
-	print_records(buffer,27);		
+	//k = number of chunks file is split into
+	k = ceil((float)get_file_size(fp_read)/mem_size);
+	file_size = get_file_size(fp_read);
+	chunk_size = ceil((float)file_size/k);	
+	nrec = ceil((float)chunk_size/sizeof(Record));
+	//block_num = number of blocks available in memory
+	buffer = (Record *)malloc(chunk_size);
+	
+	int i;
+	//printf("nblocks: %x\n file: %d\n", num_blocks, file_size);
+	for(i=0; i<k; i++){
+		buffer = read_records(fp_read, block_size, chunk_size);
+		qsort (buffer, nrec, sizeof(Record), compare);
+		//print_records(buffer, nrec);
+		fwrite (buffer, sizeof(Record), nrec, fp_write);
+		fflush (fp_write);
+		//write to sortedrecords.dat
+		
+	}
+	
+	//free(buffer);
+	fclose(fp_read);
+	fclose(fp_write);
+	
   	return 0;
 }

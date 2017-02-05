@@ -30,8 +30,7 @@ int get_size_byte(char *param)
 	}else if (strcmp(unit, "KB") == 0)
 	{
 		size_byte = num * KB;
-	}else
-	{
+	}else	{
 		fprintf(stderr, "<block size>: unit must be 'MB' or 'KB'. \n");
 		return (-1);
 	}
@@ -51,4 +50,11 @@ void print_records(Record*records, int n){
 		printf("%d,%d\n",records->uid1, records->uid2);
 		records++;
 	}
+}
+// Get size of file
+int get_file_size(FILE* file) {
+	fseek(file, 0L, SEEK_END);
+	int filesize = ftell(file);
+	rewind(file);
+	return filesize;
 }
