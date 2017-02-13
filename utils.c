@@ -1,11 +1,6 @@
 #include <stdio.h>
-#define KB 1024
-#define MB 1024 * 1024
-/* Our structure */
-typedef struct record  {
- 	int uid1;
-	int uid2;
-} Record;
+#include "utils.h"
+
 /**
  * Helper function 
  *
@@ -27,10 +22,12 @@ int get_size_byte(char *param)
 	if (strcmp(unit, "MB") == 0)
 	{
 		size_byte = num * MB;
-	}else if (strcmp(unit, "KB") == 0)
+	}
+	else if (strcmp(unit, "KB") == 0)
 	{
 		size_byte = num * KB;
-	}else	{
+	}else	
+	{
 		fprintf(stderr, "<block size>: unit must be 'MB' or 'KB'. \n");
 		return (-1);
 	}
@@ -43,17 +40,20 @@ int get_size_byte(char *param)
 	return size_byte;
 }
 
-void print_records(Record*records, int n){
+void print_records(Record*records, int n)
+{
 	int i;
 	
-	for (i=0; i<n; i++){
+	for (i = 0; i < n; i++)
+	{
 		printf("%d,%d\n",records->uid1, records->uid2);
 		records++;
 	}
 }
 
 // Get size of file
-int get_file_size(FILE* file) {
+int get_file_size(FILE* file) 
+{
 	fseek(file, 0L, SEEK_END);
 	int filesize = ftell(file);
 	rewind(file);

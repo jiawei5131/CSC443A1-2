@@ -4,7 +4,7 @@
 #include <time.h>
 #include <sys/timeb.h>
 #include <math.h>
-#include "utils.c"
+#include "utils.h"
 
 /**
 * Compares two records a and b 
@@ -14,11 +14,13 @@
 * negative: record a < record b
 * zero: equal records
 */
-int compare (const void *a, const void *b) {
- int a_f = ((const struct record*)a)->uid2;
- int b_f = ((const struct record*)b)->uid2;
- return (a_f - b_f);
+int compare (const void *a, const void *b) 
+{
+	int a_f = ((const struct record*)a)->uid2;
+	int b_f = ((const struct record*)b)->uid2;
+	return (a_f - b_f);
 }
+
 //Read a chunk of records from file given chunk_size
 Record* read_records(FILE* fp_read, int block_size, int chunk_size){
 	//int total_rec_in_RAM;
@@ -53,7 +55,8 @@ Record* read_records(FILE* fp_read, int block_size, int chunk_size){
 	return records_chunk;
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[])
+{
 	FILE* fp_read;
 	FILE* fp_write;
 	Record *buffer;
@@ -69,6 +72,7 @@ int main(int argc, char* argv[]){
 		fprintf(stderr,"Insufficient Arguments : write_blocks_seq <input filename> <memory Size> <block size>.\n");
 		return (-1);
 	}
+	
 	//Checking if arguments are valid
 	file_name = argv[1]; // TODO check if it ends with .csv
 	mem_size = atoi(argv[2]);
