@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "utils.h"
 
 /**
@@ -40,7 +42,12 @@ int get_size_byte(char *param)
 	return size_byte;
 }
 
-void print_records(Record*records, int n)
+/**
+ * Helper function
+ *
+ * Print records from the array
+ **/
+void print_records(Record* records, int n)
 {
 	int i;
 	
