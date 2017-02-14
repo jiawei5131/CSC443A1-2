@@ -21,39 +21,44 @@ int compare (const void *a, const void *b)
 	return (a_f - b_f);
 }
 
-//Read a chunk of records from file given chunk_size
-Record* read_records(FILE* fp_read, int block_size, int chunk_size){
-	// int total_rec_in_RAM;
-	Record *buffer;
-	Record *records_chunk = (Record*)malloc(chunk_size);
-	Record *curr_record = records_chunk;
-	int block_count = 0;
+/**
+ * Read a chunk of records from file given chunk_size 
+ */
+Record* read_rec_chunk(FILE* fp_read, int block_size, int chunk_size)
+{
+	Record *buffer, *records_chunk, *curr_record;
 	int nblocks = (int)chunk_size/block_size;
+	int nrecs = block_size / sizeof(Record);
 
-	/* read into RAM */
-	if (!(buffer = (Record*)malloc(block_size)) ){
+	if ( !( records_chunk = malloc(chunk_size) ) ){
+		fprintf(stderr, "malloc buffer failed. \n");
+	}
+	curr_record = records_chunk;
+
+	if ( !( buffer = malloc(block_size) ) ){
 		fprintf(stderr, "malloc buffer failed. \n");
 	}
 
-	//printf("%d\n", block_count);
-	while((block_count <= nblocks) && fread(buffer, sizeof(Record), block_size/sizeof(Record), fp_read)){
-		//printf("nrecs: %d\n", sizeof(Record));
-		int nrecs = block_size/sizeof(Record);
-		if((block_count == nblocks) && (chunk_size%block_size != 0)){
-			nrecs = (chunk_size%block_size)/sizeof(Record);
+	int block_count = 0;
+	while( (block_count <= nblocks) 
+		&& fread(buffer, sizeof(Record), nrecs, fp_read) )
+	{
+		/* last block */
+		if((block_count == nblocks) && (chunk_size % block_size != 0)){
+			nrecs = (chunk_size % block_size) / sizeof(Record);
 		}
-		int i;
 
-		for(i=0; i<nrecs; i++){
-			//if(((buffer[i].uid1==0) && (buffer[i].uid2==0))|| (count_rec >= num_rec)) break;
+		int i;
+		for(i = 0; i < nrecs; i ++){
 			curr_record->uid1 = buffer[i].uid1;
 			curr_record->uid2 = buffer[i].uid2;
 			curr_record++;
 		}
-		//printf("%d, %d\n",buffer->uid1, buffer->uid2);
+		
 		block_count++;
 	}	
 	free(buffer);
+
 	return records_chunk;
 }
 
@@ -102,21 +107,23 @@ int main(int argc, char* argv[])
 	/* k = number of chunks file is split into */
 	int k = ceil( (float) file_size / mem_size );	
 	chunk_size = ceil((float) file_size / k);	
-	nrec = ceil((float)chunk_size/sizeof(Record));
+	nrec = ceil( (float)chunk_size/sizeof(Record) );
 	//block_num = number of blocks available in memory
-	buffer = (Record *)malloc(chunk_size);
+	buffer = malloc(chunk_size);
 	fpos_t filepos[k];
 	Record** sorting_buf = malloc(sizeof(Record*)*k); 
+	
 	int i;
-	//printf("nblocks: %x\n file: %d\n", num_blocks, file_size);
 	for(i = 0; i < k; i ++){
-		buffer = read_records(fp_read, block_size, chunk_size);
+		buffer = read_rec_chunk(fp_read, block_size, chunk_size);
 		qsort (buffer, nrec, sizeof(Record), compare);
 		//print_records(buffer, nrec);
 		fwrite (buffer, sizeof(Record), nrec, fp_write);
 		fflush (fp_write);
 		//write to sortedrecords.dat		
-	}	
+	}
+
+
 	//----------Phase 2----------------
 	for(i = 0; i<k; k++){ //initializes file position variables for each chunk
 		fseek(fp_write, i*chunk_size, SEEK_SET);
