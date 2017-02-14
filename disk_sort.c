@@ -122,6 +122,7 @@ int main(int argc, char* argv[])
 		fseek(fp_write, i*chunk_size, SEEK_SET);
 		fgetpos(fp_write, &filepos[i])	
 	}
+	fseek(fp_write, 0, SEEK_SET); 
 	
 	//free(buffer);
 	fclose(fp_read);

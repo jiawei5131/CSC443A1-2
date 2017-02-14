@@ -57,6 +57,7 @@ Record* read_records(FILE* fp_read, int block_size, int chunk_size){
 	return records_chunk;
 }
 
+
 int main(int argc, char* argv[])
 {
 	FILE* fp_read;
