@@ -6,6 +6,15 @@ typedef struct record  {
  	int uid1;
 	int uid2;
 } Record;
+
+typedef struct small_rec_buf {
+	Record* rec;
+	int flags;
+	fpos_t cur_pos;
+	fpos_t end_pos;
+} Small_rec_buf;
+
+
 /**
  * Helper function 
  *

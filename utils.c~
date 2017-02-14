@@ -6,6 +6,20 @@ typedef struct record  {
  	int uid1;
 	int uid2;
 } Record;
+
+typedef struct small_rec_buf {
+	Record* rec;
+	flags;
+	fpos_t cur_pos;
+	fpos_t end_pos;
+} Small_rec_buf;
+
+enum flags{
+	no_rec_left=0;
+	one_left=1;
+	two_left=2;
+}
+
 /**
  * Helper function 
  *
@@ -51,6 +65,7 @@ void print_records(Record*records, int n){
 		records++;
 	}
 }
+
 // Get size of file
 int get_file_size(FILE* file) {
 	fseek(file, 0L, SEEK_END);

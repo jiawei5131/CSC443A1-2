@@ -105,8 +105,8 @@ int main(int argc, char* argv[])
 	nrec = ceil((float)chunk_size/sizeof(Record));
 	//block_num = number of blocks available in memory
 	buffer = (Record *)malloc(chunk_size);
-	fpos_t filepos[k]
-	Record sorting_buf[k][2];
+	fpos_t filepos[k];
+	Record** sorting_buf = malloc(sizeof(Record*)*k); 
 	int i;
 	//printf("nblocks: %x\n file: %d\n", num_blocks, file_size);
 	for(i = 0; i < k; i ++){
