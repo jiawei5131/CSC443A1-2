@@ -106,7 +106,6 @@ int main(int argc, char* argv[])
 	buffer = (Record *)malloc(chunk_size);
 	
 	int i;
-	//printf("nblocks: %x\n file: %d\n", num_blocks, file_size);
 	for(i = 0; i < k; i ++){
 		buffer = read_records(fp_read, block_size, chunk_size);
 		qsort (buffer, nrec, sizeof(Record), compare);
