@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "utils.h"
 
 #define MAX_PATH_LENGTH 1024
 
@@ -11,11 +12,6 @@
 #define SUCCESS 0
 #define FAILURE 1
 #define EMPTY 2
-
-typedef struct record {
-	int UID1;
-	int UID2;
-} Record;
 
 typedef struct HeapElement {
 	int UID1;
@@ -42,7 +38,7 @@ typedef struct merge_manager {
 	int heap_capacity;  //corresponds to the total number of runs (input buffers)
 	char output_file_name [MAX_PATH_LENGTH]; //stores name of the file to which to write the final output
 	char input_prefix [MAX_PATH_LENGTH] ; //stores the prefix of a path to each run - to concatenate with run id and to read the file
-}MergeManager;
+} MergeManager;
 
 //1. main loop
 int merge_runs (MergeManager * manager); 
