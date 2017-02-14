@@ -57,6 +57,7 @@ Record* read_records(FILE* fp_read, int block_size, int chunk_size){
 	return records_chunk;
 }
 
+
 int main(int argc, char* argv[])
 {
 	FILE* fp_read;
@@ -104,6 +105,8 @@ int main(int argc, char* argv[])
 	nrec = ceil((float)chunk_size/sizeof(Record));
 	//block_num = number of blocks available in memory
 	buffer = (Record *)malloc(chunk_size);
+	fpos_t filepos[k];
+	Record** sorting_buf = malloc(sizeof(Record*)*k); 
 	
 	int i;
 	for(i = 0; i < k; i ++){
@@ -113,7 +116,13 @@ int main(int argc, char* argv[])
 		fwrite (buffer, sizeof(Record), nrec, fp_write);
 		fflush (fp_write);
 		//write to sortedrecords.dat		
+	}	
+	//----------Phase 2----------------
+	for(i = 0; i<k; k++){ //initializes file position variables for each chunk
+		fseek(fp_write, i*chunk_size, SEEK_SET);
+		fgetpos(fp_write, &filepos[i])	
 	}
+	fseek(fp_write, 0, SEEK_SET); 
 	
 	//free(buffer);
 	fclose(fp_read);
