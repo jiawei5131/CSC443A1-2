@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
-#include <sys/timeb.h>
-#include <math.h>
-#include "utils.h"
+#include "disk_sort.h"
 
 /**
 * Compares two records a and b 
@@ -23,6 +17,8 @@ int compare (const void *a, const void *b)
 
 /**
  * Read a chunk of records from file given chunk_size 
+ * 
+ * Return: a pointer of memory that allocated for a chunk 
  */
 Record* read_rec_chunk(FILE* fp_read, int block_size, int chunk_size)
 {
@@ -32,11 +28,13 @@ Record* read_rec_chunk(FILE* fp_read, int block_size, int chunk_size)
 
 	if ( !( records_chunk = malloc(chunk_size) ) ){
 		fprintf(stderr, "malloc buffer failed. \n");
+		return NULL;
 	}
 	curr_record = records_chunk;
 
 	if ( !( buffer = malloc(block_size) ) ){
 		fprintf(stderr, "malloc buffer failed. \n");
+		return NULL;
 	}
 
 	int block_count = 0;
@@ -67,7 +65,7 @@ int main(int argc, char* argv[])
 {
 	FILE* fp_read;
 	FILE* fp_write;
-	Record *buffer;
+	Record *chunk_buffer;
 	char *file_name = 0;
 	int block_size = 0;
 	int mem_size = 0;
@@ -76,11 +74,11 @@ int main(int argc, char* argv[])
 	int chunk_size = 0;
 	
 	if(argc != 4){
-		fprintf(stderr,"Insufficient Arguments : write_blocks_seq <input filename> <memory Size> <block size>.\n");
+		fprintf(stderr, "Insufficient Arguments : disk_sort <input filename> <memory Size> <block size>.\n");
 		return (-1);
 	}
 
-	//Checking if arguments are valid
+	/* param checks */
 	file_name = argv[1];
 	mem_size = atoi(argv[2]);
 	block_size = atoi(argv[3]);	
@@ -105,31 +103,44 @@ int main(int argc, char* argv[])
 
 	file_size = get_file_size(fp_read);
 	/* k = number of chunks file is split into */
-	int k = ceil( (float) file_size / mem_size );	
-	chunk_size = ceil((float) file_size / k);	
+	int k = ceil( (float) file_size / mem_size );
+	chunk_size = ceil((float) file_size / k);
 	nrec = ceil( (float)chunk_size/sizeof(Record) );
+
 	//block_num = number of blocks available in memory
-	buffer = malloc(chunk_size);
-	fpos_t filepos[k];
-	Record** sorting_buf = malloc(sizeof(Record*)*k); 
+	// fpos_t filepos[k];
+	// Record** sorting_buf = malloc(sizeof(Record*) * k); 
 	
 	int i;
 	for(i = 0; i < k; i ++){
-		buffer = read_rec_chunk(fp_read, block_size, chunk_size);
-		qsort (buffer, nrec, sizeof(Record), compare);
-		//print_records(buffer, nrec);
-		fwrite (buffer, sizeof(Record), nrec, fp_write);
+		/* implicit malloc */
+		chunk_buffer = read_rec_chunk(fp_read, block_size, chunk_size);
+
+		if (!chunk_buffer)
+		{
+			return -1;
+		}
+
+		/* sort and write */
+		qsort (chunk_buffer, nrec, sizeof(Record), compare);
+
+		print_records(chunk_buffer, nrec); // test
+
+		fwrite (chunk_buffer, sizeof(Record), nrec, fp_write);
 		fflush (fp_write);
-		//write to sortedrecords.dat		
+
+		/* free */
+		free(chunk_buffer);
 	}
 
 
+	/*
 	//----------Phase 2----------------
 	for(i = 0; i<k; k++){ //initializes file position variables for each chunk
 		fseek(fp_write, i*chunk_size, SEEK_SET);
 		fgetpos(fp_write, &filepos[i])	
 	}
-	fseek(fp_write, 0, SEEK_SET); 
+	fseek(fp_write, 0, SEEK_SET); */
 	
 	//free(buffer);
 	fclose(fp_read);
