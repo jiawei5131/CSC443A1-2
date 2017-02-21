@@ -13,4 +13,10 @@ int get_size_byte(char*);
 void print_records(Record*, int);
 
 /* Get size of file */
-int get_file_size(FILE*);
+long get_file_size(FILE*);
+
+/* Get remaining size of file */
+long get_remain_file_size(FILE*);
+
+/* Ceil division */
+int ceil_div(int, int);

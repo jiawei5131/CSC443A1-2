@@ -10,35 +10,44 @@
  */
 int get_size_byte(char *param)
 {
-	int num;
+	int num = atoi(param);
 	int size_byte = 0;
 	char* unit;
 	/* number */
-	if ( (num = atoi(param)) <= 0 )
+	if ( num <= 0 )
 	{
 		fprintf(stderr, "<block size>: out of range. \n");
 		return (-1);
 	}
+
 	unit = param + (strlen(param) - 2);
-	/* MB or KB*/
-	if (strcmp(unit, "MB") == 0)
-	{
-		size_byte = num * MB;
+	/* B or MB or KB*/
+	if (strcmp(unit + 1, "B") == 0){
+		if (strcmp(unit, "MB") == 0)
+		{
+			size_byte = num * MB;
+		}
+		else if (strcmp(unit, "KB") == 0)
+		{
+			size_byte = num * KB;
+		}
+		else{	// unit B
+			size_byte = num;
+		}
 	}
-	else if (strcmp(unit, "KB") == 0)
+	else	
 	{
-		size_byte = num * KB;
-	}else	
-	{
-		fprintf(stderr, "<block size>: unit must be 'MB' or 'KB'. \n");
+		fprintf(stderr, "<block size>: unit must be 'MB' or 'KB' or 'B'. \n");
 		return (-1);
 	}
+
 	if (size_byte % sizeof(Record) != 0)
 	{	
 		fprintf(stderr, 
 			"<block size>: must be a multiple of size of Record(8 Bytes). \n");
 		return (-1);
 	}
+
 	return size_byte;
 }
 
@@ -58,11 +67,55 @@ void print_records(Record* records, int n)
 	}
 }
 
-// Get size of file
-int get_file_size(FILE* file) 
+/** 
+ * Get size of file in bytes
+ **/
+long get_file_size(FILE* file) 
 {
-	fseek(file, 0L, SEEK_END);
-	int filesize = ftell(file);
+	long filesize;
+
+	if ( fseek(file, 0L, SEEK_END) != 0 )
+	{
+		fprintf(stderr, "Seek end of file failed. \n");
+		return (-1);
+	}
+
+	filesize = ftell(file);
 	rewind(file);
+
 	return filesize;
+}
+
+/** 
+ * Get remaining size of file in bytes
+ **/
+long get_remain_file_size(FILE* file) 
+{
+	long position, filesize, remain_fsize;
+	fflush(file);
+	/* save position */
+	position = ftell(file);
+
+	if ( fseek(file, 0L, SEEK_END) != 0 )
+	{
+		fprintf(stderr, "Seek end of file failed. \n");
+		return (-1);
+	}
+
+	filesize = ftell(file);
+	remain_fsize = filesize - position;
+	
+	/* seek back */
+	fseek(file, position, SEEK_SET);
+	
+	return remain_fsize;
+}
+
+/**
+ * return ceilled result of the division
+ *   result = numer / denom
+ **/
+int ceil_div(int numer, int denom)
+{
+	return ( 1 + ( numer - 1) / denom );
 }
