@@ -1,4 +1,5 @@
 #include "disk_sort.h"
+char *write_file_path = "dataset/sortedrecords.dat";
 
 /**
 * Compares two records a and b 
@@ -18,46 +19,76 @@ int compare (const void *a, const void *b)
 /**
  * Read a chunk of records from file given chunk_size 
  * 
- * Return: a pointer of memory that allocated for a chunk 
+ * Return: number of records read
  */
-Record* read_rec_chunk(FILE* fp_read, int block_size, int chunk_size)
+int read_rec_chunk(FILE* fp_read, int block_size, int chunk_size, Record* chunk_buffer)
 {
-	Record *buffer, *records_chunk, *curr_record;
-	int nblocks = (int)chunk_size/block_size;
-	int nrecs = block_size / sizeof(Record);
+	Record *buffer, *cur_rec, *buf_walker;
+	int nblocks, num_rec_per_block, num_rec_last_block;
+	int read_count = 0;
 
-	if ( !( records_chunk = malloc(chunk_size) ) ){
+	/* calculation */
+	nblocks = ceil_div(chunk_size, block_size);
+	num_rec_per_block = block_size / sizeof(Record);
+	num_rec_last_block = (chunk_size / sizeof(Record)) % num_rec_per_block;
+
+	/* temp buffer */
+	buffer = malloc(num_rec_per_block * sizeof(Record));
+	if (!buffer){
 		fprintf(stderr, "malloc buffer failed. \n");
-		return NULL;
-	}
-	curr_record = records_chunk;
-
-	if ( !( buffer = malloc(block_size) ) ){
-		fprintf(stderr, "malloc buffer failed. \n");
-		return NULL;
+		return -1;
 	}
 
-	int block_count = 0;
-	while( (block_count <= nblocks) 
-		&& fread(buffer, sizeof(Record), nrecs, fp_read) )
+	cur_rec = chunk_buffer;
+	int block_count;
+	for (block_count = 1; block_count <= nblocks; block_count ++)
 	{
-		/* last block */
-		if((block_count == nblocks) && (chunk_size % block_size != 0)){
-			nrecs = (chunk_size % block_size) / sizeof(Record);
+		int num_rec_read, num_rec_to_read;
+
+		/* read a block of records */
+		if (block_count == nblocks)
+		{
+			/* last block */
+			num_rec_to_read = num_rec_last_block;
 		}
+		else
+		{
+			/* other blocks */
+			num_rec_to_read = num_rec_per_block;
+		}
+
+		num_rec_read = fread(buffer, sizeof(Record), num_rec_to_read, fp_read);
+		
+		/* reset walker */
+		buf_walker = buffer;
+		if ( num_rec_read != num_rec_to_read && !feof(fp_read) )
+		{
+			fprintf(stderr, "Reading records failed. \n");
+			return -1;
+		}
+
+		printf("rec read :%d\n", num_rec_read);
 
 		int i;
-		for(i = 0; i < nrecs; i ++){
-			curr_record->uid1 = buffer[i].uid1;
-			curr_record->uid2 = buffer[i].uid2;
-			curr_record++;
+		for(i = 0; i < num_rec_read; i ++){
+			cur_rec->uid1 = buf_walker->uid1;
+			cur_rec->uid2 = buf_walker->uid2;
+
+			/* walk */
+			cur_rec++;
+			buf_walker++;
+			read_count++;
 		}
-		
-		block_count++;
-	}	
+
+		if ( feof(fp_read) )
+		{
+			break;
+		}
+	}
+
 	free(buffer);
 
-	return records_chunk;
+	return read_count;
 }
 
 
@@ -69,9 +100,7 @@ int main(int argc, char* argv[])
 	char *file_name = 0;
 	int block_size = 0;
 	int mem_size = 0;
-	int file_size;
-	int nrec = 0;
-	int chunk_size = 0;
+	long file_size;
 	
 	if(argc != 4){
 		fprintf(stderr, "Insufficient Arguments : disk_sort <input filename> <memory Size> <block size>.\n");
@@ -80,63 +109,69 @@ int main(int argc, char* argv[])
 
 	/* param checks */
 	file_name = argv[1];
-	mem_size = atoi(argv[2]);
-	block_size = atoi(argv[3]);	
+	mem_size = get_size_byte(argv[2]);
+	block_size = get_size_byte(argv[3]);	
 	
-	if((block_size == 0) | (mem_size == 0)){
-		fprintf(stderr,"<block size> and <memory size> are required to be integers greater than one.\n");
+	if ((block_size <= 0) || (mem_size <= 0))
+	{
+		fprintf(stderr,"<block size> or <memory size> are invalid.\n");
 		return (-1);
 	}
-	if((block_size > mem_size)){
+	if (block_size > mem_size)
+	{
 		fprintf(stderr,"block size must not be greater than memory size.\n");
 		return (-1);
 	}
-	if ( !( fp_read = fopen(file_name, "rb") ) ){
-		fprintf(stderr, "Could not open file \"trunc%s\" for reading. \n", argv[1]);
-		return (-1);
-	}
-	if ( !( fp_write = fopen ( "sortedrecords.dat" , "wb" ) ) )
+	if ( !( fp_read = fopen(file_name, "rb") ) )
 	{
-		fprintf(stderr, "Could not open file \"%s\" for writing. \n", "sortedrecords.dat");
+		fprintf(stderr, "Could not open file \"trunc%s\" for reading. \n", file_name);
+		return (-1);
+	}
+	if ( !( fp_write = fopen(write_file_path , "wb") ) )
+	{
+		fprintf(stderr, "Could not open file \"%s\" for writing. \n", write_file_path);
 		return (-1);
 	}
 
+	/* calculate the chunk size */
 	file_size = get_file_size(fp_read);
-	/* k = number of chunks file is split into */
-	int k = ceil( (float) file_size / mem_size );
-	chunk_size = ceil((float) file_size / k);
-	nrec = ceil( (float)chunk_size/sizeof(Record) );
+	int num_rec_per_chunk = mem_size / sizeof(Record); // floor division
+	int chunk_size = num_rec_per_chunk * sizeof(Record);
+	int num_chunk = ceil_div(file_size, chunk_size);
 
-	//block_num = number of blocks available in memory
-	// fpos_t filepos[k];
-	// Record** sorting_buf = malloc(sizeof(Record*) * k); 
+	/* malloc chunk */
+	chunk_buffer = malloc(chunk_size);
+	if (!chunk_buffer){
+		fprintf(stderr, "malloc buffer failed. \n");
+		return -1;
+	}	
 	
-	int i;
-	for(i = 0; i < k; i ++){
-		/* implicit malloc */
-		chunk_buffer = read_rec_chunk(fp_read, block_size, chunk_size);
+	int i, num_rec_read;
+	for(i = 0; i < num_chunk; i ++){
+		/* read a chunk of records into buffer */
+		num_rec_read = read_rec_chunk(fp_read, block_size, chunk_size, chunk_buffer);
 
-		if (!chunk_buffer)
+		if (num_rec_read <= 0)
 		{
 			return -1;
 		}
 
 		/* sort and write */
-		qsort (chunk_buffer, nrec, sizeof(Record), compare);
+		qsort (chunk_buffer, num_rec_read, sizeof(Record), compare);
 
-		print_records(chunk_buffer, nrec); // test
+		print_records(chunk_buffer, num_rec_read); // test
 
-		fwrite (chunk_buffer, sizeof(Record), nrec, fp_write);
-		fflush (fp_write);
-
-		/* free */
-		free(chunk_buffer);
+		fwrite (chunk_buffer, sizeof(Record), num_rec_read, fp_write);
+		fflush (fp_write);	
 	}
+
+	/* free */
+	free(chunk_buffer);
 
 
 	/*
 	//----------Phase 2----------------
-	for(i = 0; i<k; k++){ //initializes file position variables for each chunk
+	for(i = 0; i<num_chunk; num_chunk++){ //initializes file position variables for each chunk
 		fseek(fp_write, i*chunk_size, SEEK_SET);
 		fgetpos(fp_write, &filepos[i])	
 	}
