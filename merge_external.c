@@ -126,6 +126,9 @@ int init_merge (MergeManager * manager) {
 }
 
 int flush_output_buffer (MergeManager * manager) {
+	/* flush the buffer to output file */
+	/* reset ouput buffer position */
+	merger->current_output_buffer_position=0;
 	return SUCCESS;
 }
 
