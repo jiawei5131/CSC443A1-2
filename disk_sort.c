@@ -47,7 +47,7 @@ int read_rec_chunk(FILE* fp_read, int block_size, int chunk_size, Record* chunk_
 		int num_rec_read, num_rec_to_read;
 
 		/* read a block of records */
-		if (block_count == nblocks)
+		if (block_count == nblocks && num_rec_last_block != 0)
 		{
 			/* last block */
 			num_rec_to_read = num_rec_last_block;
