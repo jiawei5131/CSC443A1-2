@@ -45,6 +45,8 @@ int main (int argc, char **argv) {
 		return FAILURE;
 	}
 
+	/* Phase I */
+
 	//initialize all fields according to the input and the results of Phase I
 
 

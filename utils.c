@@ -120,3 +120,18 @@ int ceil_div(int numer, int denom)
 {
 	return ( 1 + ( numer - 1) / denom );
 }
+
+/**
+* Compares two records a and b 
+* with respect to the value of the integer field f.
+* Returns an integer which indicates relative order: 
+* positive: record a > record b
+* negative: record a < record b
+* zero: equal records
+*/
+int compare (const void *a, const void *b) 
+{
+	int a_f = ((const struct record*)a)->uid2;
+	int b_f = ((const struct record*)b)->uid2;
+	return (a_f - b_f);
+}
