@@ -138,6 +138,7 @@ int init_merge (MergeManager * manager, int K) {
 	manager->total_input_buffer_elements = malloc(K*sizeof(int));
 	manager->input_buffer_capacity = 2;
 	manager->current_input_file_positions =  malloc(K*sizeof(int));
+	
 	int i; //initialize arrays
 	for(i=0; i<K; i++){
 		manager->input_buffers = malloc(2*sizeof(Record));
@@ -145,26 +146,29 @@ int init_merge (MergeManager * manager, int K) {
 		manager->total_input_buffer_elements[i] = 2;
 		manager->current_input_file_positions[i] =  K*i;
 	}
+
 	manager->current_heap_size = K*2*sizeof(Record);
 	manager->heap_capacity = K*2;	
 	return SUCCESS;
 }
 
 int flush_output_buffer (MergeManager * manager) {
+	/* flush the buffer to output file */
 	int position = manager->current_output_buffer_position;
 	int capacity = manager->output_buffer_capacity;
 	Record* buffer= manager->output_buffer;
 	FILE* outputFP = manager->outputFP;
+
 	if (position == capacity){
-		if(fwrite(buffer, sizeof(Record),capacity, outputFP)==0){
+		if(fwrite(buffer, sizeof(Record), capacity, outputFP) == 0){
 				fprintf(stderr, "writing to output failed \n");
-			return -1;
+			return FAILURE;
 		}
 	}
+
 	//reset output buffer after flush
 	manager->current_output_buffer_position = 0;
-	free(manager->output_buffer);
-	manager->output_buffer = malloc(sizeof(Record)*capacity);
+
 	return SUCCESS;
 }
 

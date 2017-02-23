@@ -38,14 +38,14 @@ int get_size_byte(char *param)
 	}
 	else	
 	{
-		fprintf(stderr, "<block size>: unit must be 'MB' or 'KB' or 'B'. \n");
+		fprintf(stderr, "<block size / mem size>: unit must be 'MB' or 'KB' or 'B'. \n");
 		return (-1);
 	}
 
 	if (size_byte % sizeof(Record) != 0)
 	{	
 		fprintf(stderr, 
-			"<block size>: must be a multiple of size of Record(8 Bytes). \n");
+			"<block size / mem size>: must be a multiple of size of Record(8 Bytes). \n");
 		return (-1);
 	}
 
@@ -112,23 +112,34 @@ long get_remain_file_size(FILE* file)
 	return remain_fsize;
 }
 
+/**
+ * count the number of digits of an int
+ **/
 int count_digits(int num)
-	 int n = num;
+{
+	int n = m;
     int count = 0;
+
     while(n != 0)
     {
-        // n = n/10
         n /= 10;
         ++count;
     }
+    
     return count;
 }
 
-char* int_to_string(int K){
-	char* buf = malloc(sizeof(char)*count_digits(K));
+
+/**
+ * Convert int to str
+ **/
+char* int_to_string(int K)
+{
+	char* buf = malloc(sizeof(char) * count_digits(K));
 	sprintf(buf, "%d", K);
 	return buf;
 }
+
 /**
  * return ceilled result of the division
  *   result = numer / denom
@@ -136,4 +147,20 @@ char* int_to_string(int K){
 int ceil_div(int numer, int denom)
 {
 	return ( 1 + ( numer - 1) / denom );
+}
+
+
+/**
+* Compares two records a and b 
+* with respect to the value of the integer field f.
+* Returns an integer which indicates relative order: 
+* positive: record a > record b
+* negative: record a < record b
+* zero: equal records
+*/
+int compare (const void *a, const void *b) 
+{
+	int a_f = ((const struct record*)a)->uid2;
+	int b_f = ((const struct record*)b)->uid2;
+	return (a_f - b_f);
 }
