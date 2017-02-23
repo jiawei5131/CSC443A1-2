@@ -138,6 +138,7 @@ int init_merge (MergeManager * manager, int K) {
 	manager->total_input_buffer_elements = malloc(K*sizeof(int));
 	manager->input_buffer_capacity = 2;
 	manager->current_input_file_positions =  malloc(K*sizeof(int));
+	
 	int i; //initialize arrays
 	for(i=0; i<K; i++){
 		manager->input_buffers = malloc(2*sizeof(Record));
@@ -145,6 +146,7 @@ int init_merge (MergeManager * manager, int K) {
 		manager->total_input_buffer_elements[i] = 2;
 		manager->current_input_file_positions[i] =  K*i;
 	}
+
 	manager->current_heap_size = K*2*sizeof(Record);
 	manager->heap_capacity = K*2;	
 	return SUCCESS;

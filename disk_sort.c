@@ -1,10 +1,6 @@
 #include "disk_sort.h"
-<<<<<<< HEAD
 
-char *write_file_path = "dataset/sortedrecords.dat";
-=======
 char *write_file_path = "dataset/phase1.dat";
->>>>>>> cedb0789699eea3dbdfc162a2041681ba3b7b9b0
 
 /**
 * Compares two records a and b 
@@ -138,7 +134,6 @@ int main(int argc, char* argv[])
 
 	/* calculate the chunk size */
 	file_size = get_file_size(fp_read);
-	//int num_rec_per_chunk = mem_size / sizeof(Record); // floor division
 	int chunk_size = mem_size;
 	int num_chunk = ceil_div(file_size, chunk_size);
 
@@ -161,8 +156,6 @@ int main(int argc, char* argv[])
 
 		/* sort and write */
 		qsort (chunk_buffer, num_rec_read, sizeof(Record), compare);
-		//printf("file size: %d, chunk_size: %d, block_size: %d\n", file_size, mem_size, block_size);
-		//print_records(chunk_buffer, num_rec_read); // test
 		fwrite (chunk_buffer, sizeof(Record), num_rec_read, fp_write);
 		fflush (fp_write);	
 	}

@@ -1,6 +1,6 @@
 #include "merge.h"
 
-char *write_file_path = "dataset/merge_records.dat";
+char *write_file_path = "dataset/phase_2.dat";
 int extra_mem = 5 * MB;
 
 int main (int argc, char **argv) {
