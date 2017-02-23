@@ -37,14 +37,14 @@ int get_size_byte(char *param)
 	}
 	else	
 	{
-		fprintf(stderr, "<block size>: unit must be 'MB' or 'KB' or 'B'. \n");
+		fprintf(stderr, "<block size / mem size>: unit must be 'MB' or 'KB' or 'B'. \n");
 		return (-1);
 	}
 
 	if (size_byte % sizeof(Record) != 0)
 	{	
 		fprintf(stderr, 
-			"<block size>: must be a multiple of size of Record(8 Bytes). \n");
+			"<block size / mem size>: must be a multiple of size of Record(8 Bytes). \n");
 		return (-1);
 	}
 

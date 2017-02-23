@@ -1,4 +1,5 @@
 #include "disk_sort.h"
+
 char *write_file_path = "dataset/sortedrecords.dat";
 
 /**
@@ -165,19 +166,8 @@ int main(int argc, char* argv[])
 		fflush (fp_write);	
 	}
 
-	/* free */
+	/* clean up */
 	free(chunk_buffer);
-
-
-	/*
-	//----------Phase 2----------------
-	for(i = 0; i<num_chunk; num_chunk++){ //initializes file position variables for each chunk
-		fseek(fp_write, i*chunk_size, SEEK_SET);
-		fgetpos(fp_write, &filepos[i])	
-	}
-	fseek(fp_write, 0, SEEK_SET); */
-	
-	//free(buffer);
 	fclose(fp_read);
 	fclose(fp_write);
 	
