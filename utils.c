@@ -113,16 +113,6 @@ long get_remain_file_size(FILE* file)
 }
 
 /**
- * Convert int to str
- **/
-char* int_to_string(int K)
-{
-	char* buf = malloc(sizeof(char) * count_digits(K));
-	sprintf(buf, "%d", K);
-	return buf;
-}
-
-/**
  * count the number of digits of an int
  **/
 int count_digits(int num)
@@ -139,6 +129,17 @@ int count_digits(int num)
     return count;
 }
 
+
+/**
+ * Convert int to str
+ **/
+char* int_to_string(int K)
+{
+	char* buf = malloc(sizeof(char) * count_digits(K));
+	sprintf(buf, "%d", K);
+	return buf;
+}
+
 /**
  * return ceilled result of the division
  *   result = numer / denom
@@ -147,6 +148,7 @@ int ceil_div(int numer, int denom)
 {
 	return ( 1 + ( numer - 1) / denom );
 }
+
 
 /**
 * Compares two records a and b 
