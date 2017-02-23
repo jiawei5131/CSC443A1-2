@@ -112,6 +112,23 @@ long get_remain_file_size(FILE* file)
 	return remain_fsize;
 }
 
+int count_digits(int num)
+	 int n = num;
+    int count = 0;
+    while(n != 0)
+    {
+        // n = n/10
+        n /= 10;
+        ++count;
+    }
+    return count;
+}
+
+char* int_to_string(int K){
+	char* buf = malloc(sizeof(char)*count_digits(K));
+	sprintf(buf, "%d", K);
+	return buf;
+}
 /**
  * return ceilled result of the division
  *   result = numer / denom
