@@ -1,11 +1,12 @@
 #include "merge.h"
+#include <math.h>
 
 //manager fields should be already initialized in the caller
-int merge_runs (MergeManager * merger){	
+int merge_runs (MergeManager * merger, int K){	
 	int  result; //stores SUCCESS/FAILURE returned at the end	
 	
 	//1. go in the loop through all input files and fill-in initial buffers
-	if (init_merge (merger)!=SUCCESS)
+	if (init_merge (merger, K)!=SUCCESS)
 		return FAILURE;
 
 	while (merger->current_heap_size > 0) { //heap is not empty
@@ -26,8 +27,8 @@ int merge_runs (MergeManager * merger){
 		}		
 
 
-		merger->output_buffer [merger->current_output_buffer_position].UID1=smallest.UID1;
-		merger->output_buffer [merger->current_output_buffer_position].UID2=smallest.UID2;
+		merger->output_buffer [merger->current_output_buffer_position].uid1=smallest.UID1;
+		merger->output_buffer [merger->current_output_buffer_position].uid2=smallest.UID2;
 		
 		merger->current_output_buffer_position++;
 
@@ -92,8 +93,8 @@ int insert_into_heap (MergeManager * merger, int run_id, Record *input){
 	HeapElement new_heap_element;
 	int child, parent;
 
-	new_heap_element.UID1 = input->UID1;
-	new_heap_element.UID2 = input->UID2;
+	new_heap_element.UID1 = input->uid1;
+	new_heap_element.UID2 = input->uid2;
 	new_heap_element.run_id = run_id;
 	
 	if (merger->current_heap_size == merger->heap_capacity) {
@@ -121,7 +122,31 @@ int insert_into_heap (MergeManager * merger, int run_id, Record *input){
 ** TO IMPLEMENT
 */
 
-int init_merge (MergeManager * manager) {
+int init_merge (MergeManager * manager, int K) {
+	//manager->heap=malloc(sizeof(HeapElement *)*K*2);
+	//*manager->inputFP = 
+	//long file_size = get_file_size(manager->inputFP);
+	//int chunk_size = floor((float)file_size/K);
+	//int last_chunk_size = file_size%chunk_size;
+	manager->inputFP = fopen("dataset/phase1.dat", "w"); //all record chunks from phase 1 stored in phase1.dat
+	manager->outputFP = fopen("dataset/phase2.dat", "w"); //open output file
+	manager->output_buffer_capacity = 2;
+	manager->output_buffer = malloc(sizeof(Record)*manager->output_buffer_capacity); //output buffer has capacity for 2 records
+	manager->current_output_buffer_position = 0; 
+	manager->input_buffers = malloc(K*sizeof(Record*));
+	manager->current_input_buffer_positions = malloc(K*sizeof(int)); //all buffer positions point within the same file
+	manager->total_input_buffer_elements = malloc(K*sizeof(int));
+	manager->input_buffer_capacity = 2;
+	manager->current_input_file_positions =  malloc(K*sizeof(int));
+	int i; //initialize arrays
+	for(i=0; i<K; i++){
+		manager->input_buffers = malloc(2*sizeof(Record));
+		manager->current_input_buffer_positions[i]=0;
+		manager->total_input_buffer_elements[i] = 2;
+		manager->current_input_file_positions[i] =  K*i;
+	}
+	manager->current_heap_size = K*2*sizeof(Record);
+	manager->heap_capacity = K*2;	
 	return SUCCESS;
 }
 
@@ -144,3 +169,4 @@ void clean_up (MergeManager * merger) {
 int compare_heap_elements (HeapElement *a, HeapElement *b) {
 	return 0;
 }
+int main(int argc, char* argv[]){return 0;}

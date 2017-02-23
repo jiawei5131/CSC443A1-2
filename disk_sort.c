@@ -1,5 +1,5 @@
 #include "disk_sort.h"
-char *write_file_path = "dataset/sortedrecords.dat";
+char *write_file_path = "dataset/phase1.dat";
 
 /**
 * Compares two records a and b 
@@ -31,7 +31,6 @@ int read_rec_chunk(FILE* fp_read, int block_size, int chunk_size, Record* chunk_
 	nblocks = ceil_div(chunk_size, block_size);
 	num_rec_per_block = block_size / sizeof(Record);
 	num_rec_last_block = (chunk_size / sizeof(Record)) % num_rec_per_block;
-
 	/* temp buffer */
 	buffer = malloc(num_rec_per_block * sizeof(Record));
 	if (!buffer){
@@ -43,13 +42,14 @@ int read_rec_chunk(FILE* fp_read, int block_size, int chunk_size, Record* chunk_
 	int block_count;
 	for (block_count = 1; block_count <= nblocks; block_count ++)
 	{
-		int num_rec_read, num_rec_to_read;
+		int num_rec_read=0, num_rec_to_read=0;
 
 		/* read a block of records */
-		if (block_count == nblocks)
+		if ((block_count == nblocks) & (num_rec_last_block!=0))
 		{
 			/* last block */
 			num_rec_to_read = num_rec_last_block;
+			
 		}
 		else
 		{
@@ -66,8 +66,6 @@ int read_rec_chunk(FILE* fp_read, int block_size, int chunk_size, Record* chunk_
 			fprintf(stderr, "Reading records failed. \n");
 			return -1;
 		}
-
-		printf("rec read :%d\n", num_rec_read);
 
 		int i;
 		for(i = 0; i < num_rec_read; i ++){
@@ -122,12 +120,12 @@ int main(int argc, char* argv[])
 		fprintf(stderr,"block size must not be greater than memory size.\n");
 		return (-1);
 	}
-	if ( !( fp_read = fopen(file_name, "rb") ) )
+	if ( !( fp_read = fopen(file_name, "r") ) )
 	{
-		fprintf(stderr, "Could not open file \"trunc%s\" for reading. \n", file_name);
+		fprintf(stderr, "Could not open file \"%s\" for reading. \n", file_name);
 		return (-1);
 	}
-	if ( !( fp_write = fopen(write_file_path , "wb") ) )
+	if ( !( fp_write = fopen(write_file_path , "w") ) )
 	{
 		fprintf(stderr, "Could not open file \"%s\" for writing. \n", write_file_path);
 		return (-1);
@@ -135,8 +133,8 @@ int main(int argc, char* argv[])
 
 	/* calculate the chunk size */
 	file_size = get_file_size(fp_read);
-	int num_rec_per_chunk = mem_size / sizeof(Record); // floor division
-	int chunk_size = num_rec_per_chunk * sizeof(Record);
+	//int num_rec_per_chunk = mem_size / sizeof(Record); // floor division
+	int chunk_size = mem_size;
 	int num_chunk = ceil_div(file_size, chunk_size);
 
 	/* malloc chunk */
@@ -145,7 +143,7 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "malloc buffer failed. \n");
 		return -1;
 	}	
-	
+
 	int i, num_rec_read;
 	for(i = 0; i < num_chunk; i ++){
 		/* read a chunk of records into buffer */
@@ -158,9 +156,8 @@ int main(int argc, char* argv[])
 
 		/* sort and write */
 		qsort (chunk_buffer, num_rec_read, sizeof(Record), compare);
-
-		print_records(chunk_buffer, num_rec_read); // test
-
+		//printf("file size: %d, chunk_size: %d, block_size: %d\n", file_size, mem_size, block_size);
+		//print_records(chunk_buffer, num_rec_read); // test
 		fwrite (chunk_buffer, sizeof(Record), num_rec_read, fp_write);
 		fflush (fp_write);	
 	}
