@@ -117,7 +117,7 @@ long get_remain_file_size(FILE* file)
  **/
 int count_digits(int num)
 {
-	int n = m;
+	int n = num;
     int count = 0;
 
     while(n != 0)

@@ -173,6 +173,29 @@ int flush_output_buffer (MergeManager * manager) {
 }
 
 int get_next_input_element(MergeManager * manager, int file_number, Record *result) {
+	int K = manager->heap_capacity;
+	int i;
+	int input_buffer_position;
+	for (i = 0; i<K; i++){
+		if(manager->input_buffer_capacity > manager->current_input_buffer_positions[i]){
+			input_buffer_position = manager->current_input_buffer_positions[i];
+			break;
+		}
+	}
+	//if there are no more records in the input buffer, we read from file
+	if((i == (K-1)) & (manager->input_buffer_capacity == manager->current_input_buffer_positions[i])){
+		refill_buffer(manager, file_number);	
+	}else{
+		//insert record at run_id = i and position = input_buffer_position into heap
+		result = &(manager->input_buffers[i][input_buffer_position]);
+		Record* input = (Record*) malloc(sizeof(Record));
+		input->uid1 = result->uid1;
+		input->uid2 = result->uid2;
+		insert_into_heap(manager, i, input);
+		manager->current_input_buffer_positions[i] += 1;
+		//free(&manager->input_buffers[i][input_buffer_position]);
+		//manager->input_buffers[i][input_buffer_position] =(Record) malloc(sizeof(Record));
+	}
 	return SUCCESS;
 }
 

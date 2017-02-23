@@ -10,12 +10,6 @@ char *write_file_path = "dataset/phase1.dat";
 * negative: record a < record b
 * zero: equal records
 */
-int compare (const void *a, const void *b) 
-{
-	int a_f = ((const struct record*)a)->uid2;
-	int b_f = ((const struct record*)b)->uid2;
-	return (a_f - b_f);
-}
 
 /**
  * Read a chunk of records from file given chunk_size 
