@@ -178,7 +178,7 @@ int flush_output_buffer (MergeManager * manager) {
 
 
 int get_next_input_element(MergeManager * manager, int file_number, Record *result) {
-	/**/
+	/*Takes next element in input buffers and insert into heap*/
 	int K = manager->heap_capacity;
 	int i;
 	int input_buffer_position;
@@ -188,7 +188,7 @@ int get_next_input_element(MergeManager * manager, int file_number, Record *resu
 			break;
 		}
 	}
-	//if there are no more records in the input buffer, we read from file
+	//input buffers empty, load records from disk
 	if((i == (K-1)) & (manager->total_input_buffer_elements[i] == 0)){
 		refill_buffer(manager, file_number);	
 	}else{
@@ -209,7 +209,7 @@ int get_next_input_element(MergeManager * manager, int file_number, Record *resu
 
 
 int refill_buffer (MergeManager * manager, int file_number) {
-	/**/
+	/*fill input buffer with records from given file and file position.*/
 	char input_file_name[MAX_PATH_LENGTH];
 	int num_rec_read = 0;
 	strcat(input_file_name, manager->input_prefix);
@@ -233,6 +233,7 @@ int refill_buffer (MergeManager * manager, int file_number) {
 
 
 void clean_up (MergeManager * merger) {
+	//not sure if I did this part right
 	free(merger->inputFP);
 	fclose(merger->outputFP);
 	free(merger->outputFP);
