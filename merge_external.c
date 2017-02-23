@@ -154,8 +154,21 @@ int init_merge (MergeManager * manager, int K) {
 
 int flush_output_buffer (MergeManager * manager) {
 	/* flush the buffer to output file */
-	/* reset ouput buffer position */
-	merger->current_output_buffer_position=0;
+	int position = manager->current_output_buffer_position;
+	int capacity = manager->output_buffer_capacity;
+	Record* buffer= manager->output_buffer;
+	FILE* outputFP = manager->outputFP;
+
+	if (position == capacity){
+		if(fwrite(buffer, sizeof(Record), capacity, outputFP) == 0){
+				fprintf(stderr, "writing to output failed \n");
+			return FAILURE;
+		}
+	}
+
+	//reset output buffer after flush
+	manager->current_output_buffer_position = 0;
+
 	return SUCCESS;
 }
 
