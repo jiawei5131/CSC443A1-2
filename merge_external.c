@@ -128,7 +128,7 @@ int insert_into_heap (MergeManager * merger, int run_id, Record *input){
 int init_merge (MergeManager * manager) {
 	/* read each run into its corresponding input_buffer */
 	int K = manager->heap_capacity;
-	int input_buffer_capacity = manager->input_buffer_capacity;
+	//int input_buffer_capacity = manager->input_buffer_capacity;
 
 	int chunk_id;
 	for (chunk_id = 0; chunk_id < K; chunk_id ++){
@@ -192,7 +192,7 @@ int get_next_input_element(MergeManager * manager, int file_number, Record *resu
 
 int refill_buffer (MergeManager * manager, int file_number) {
 	/*fill input buffer with records from given file and file position.*/
-	char input_file_name[MAX_PATH_LENGTH];
+	//char input_file_name[MAX_PATH_LENGTH];
 	int num_rec_read = 0;
 	manager->current_input_buffer_positions[file_number] = 0;
 	manager->inputFP = get_read_fp(file_number);
@@ -230,6 +230,9 @@ void clean_up (MergeManager * merger) {
 
 
 int compare_heap_elements (HeapElement *a, HeapElement *b) {
+	int a_f = a->UID2;
+	int b_f = b->UID2;
+	return (a_f - b_f);
 	return 0;
 }
 
