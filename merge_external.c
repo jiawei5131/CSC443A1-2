@@ -166,24 +166,24 @@ int flush_output_buffer (MergeManager * manager) {
 
 int get_next_input_element(MergeManager * manager, int file_number, Record *result) {
 	/*Takes next element in input buffers and insert into heap*/
-	//Checks if input_buffer at file_number is empty
+	
+	//Checks if input_buffer[file_number] is empty
 	if(manager->total_input_buffer_elements[file_number] == 0){
-		//read from input buffer and update manager
+		//load from file and update record-keeping variables
 		refill_buffer(manager, file_number);
 	}
+	
+	//store input element in result
 	result = &(manager->input_buffers[file_number][manager->current_input_buffer_positions[file_number]]);
 	Record* input = (Record*) malloc(sizeof(Record));
 	input->uid1 = result->uid1;
 	input->uid2 = result->uid2;
+	//insert copy into heap
 	insert_into_heap(manager, file_number, input);
+	//update record-keeping variables
 	manager->current_input_buffer_positions[file_number] += 1;
 	manager->total_input_buffer_elements[file_number] -= 1;
-	//if all input_buffers are empty, load from file
-
-		//insert record at run_id = i and position = input_buffer_position into heap
-
-		//free(&manager->input_buffers[i][input_buffer_position]);
-		//manager->input_buffers[i][input_buffer_position] =(Record) malloc(sizeof(Record));
+	free(result);
 	
 	return SUCCESS;
 }
@@ -196,12 +196,14 @@ int refill_buffer (MergeManager * manager, int file_number) {
 	int num_rec_read = 0;
 	manager->current_input_buffer_positions[file_number] = 0;
 	manager->inputFP = get_read_fp(file_number);
+	
 	//set file pointer to the correct position
 	fseek(manager->inputFP, manager->current_input_file_positions[file_number]*sizeof(Record), SEEK_SET);
 	if ((num_rec_read = fread(manager->input_buffers[file_number], sizeof(Record), manager->input_buffer_capacity, manager->inputFP))==0){
 			fprintf(stderr, "Reading from file failed \n");
 			return FAILURE;
 	}
+	
 	//update position in the file
 	manager->current_input_file_positions[file_number] += ftell(manager->inputFP);
 	fclose(manager->inputFP);
