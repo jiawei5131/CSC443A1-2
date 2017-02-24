@@ -2,18 +2,10 @@
 #define MB 1024 * 1024
 #define INPUT_PREFIX "dataset/phase1_"
 #include <math.h>
-#include "merge.h"
-
-typedef struct record  {
- 	int uid1;
-	int uid2;
-} Record;
 
 /* Process the second input argument */
 int get_size_byte(char* param);
 
-/* print Records in the array */
-void print_records(Record* records, int n);
 
 /* Get size of file */
 long get_file_size(FILE* file);

@@ -7,8 +7,9 @@ int merge_runs (MergeManager * merger){
 	int  result; //stores SUCCESS/FAILURE returned at the end	
 	
 	//1. go in the loop through all input files and fill-in initial buffers
-	if (init_merge (merger != SUCCESS)
+	if (init_merge (merger) != SUCCESS){
 		return FAILURE;
+	}
 
 	while (merger->current_heap_size > 0) { //heap is not empty
 		HeapElement smallest;
@@ -165,30 +166,25 @@ int flush_output_buffer (MergeManager * manager) {
 
 int get_next_input_element(MergeManager * manager, int file_number, Record *result) {
 	/*Takes next element in input buffers and insert into heap*/
-	int K = manager->heap_capacity;
-	int i;
-	int input_buffer_position;
-	for (i = 0; i<K; i++){
-		if(manager->total_input_buffer_elements[i] > 0){
-			input_buffer_position = manager->current_input_buffer_positions[i];
-			break;
-		}
+	//Checks if input_buffer at file_number is empty
+	if(manager->total_input_buffer_elements[file_number] == 0){
+		//read from input buffer and update manager
+		refill_buffer(manager, file_number);
 	}
-	//input buffers empty, load records from disk
-	if((i == (K-1)) & (manager->total_input_buffer_elements[i] == 0)){
-		refill_buffer(manager, file_number);	
-	}else{
+	result = &(manager->input_buffers[file_number][manager->current_input_buffer_positions[file_number]]);
+	Record* input = (Record*) malloc(sizeof(Record));
+	input->uid1 = result->uid1;
+	input->uid2 = result->uid2;
+	insert_into_heap(manager, file_number, input);
+	manager->current_input_buffer_positions[file_number] += 1;
+	manager->total_input_buffer_elements[file_number] -= 1;
+	//if all input_buffers are empty, load from file
+
 		//insert record at run_id = i and position = input_buffer_position into heap
-		result = &(manager->input_buffers[i][input_buffer_position]);
-		Record* input = (Record*) malloc(sizeof(Record));
-		input->uid1 = result->uid1;
-		input->uid2 = result->uid2;
-		insert_into_heap(manager, i, input);
-		manager->current_input_buffer_positions[i] += 1;
-		manager->total_input_buffer_elements[i] -= 1;
+
 		//free(&manager->input_buffers[i][input_buffer_position]);
 		//manager->input_buffers[i][input_buffer_position] =(Record) malloc(sizeof(Record));
-	}
+	
 	return SUCCESS;
 }
 
@@ -198,11 +194,8 @@ int refill_buffer (MergeManager * manager, int file_number) {
 	/*fill input buffer with records from given file and file position.*/
 	char input_file_name[MAX_PATH_LENGTH];
 	int num_rec_read = 0;
-	strcat(input_file_name, manager->input_prefix);
-	strcat(input_file_name, int_to_string(file_number));
-	strcat(input_file_name, ".dat");
 	manager->current_input_buffer_positions[file_number] = 0;
-	manager->inputFP = fopen(input_file_name, "r");
+	manager->inputFP = get_read_fp(file_number);
 	//set file pointer to the correct position
 	fseek(manager->inputFP, manager->current_input_file_positions[file_number]*sizeof(Record), SEEK_SET);
 	if ((num_rec_read = fread(manager->input_buffers[file_number], sizeof(Record), manager->input_buffer_capacity, manager->inputFP))==0){
@@ -210,7 +203,7 @@ int refill_buffer (MergeManager * manager, int file_number) {
 			return FAILURE;
 	}
 	//update position in the file
-	manager->current_input_file_positions[file_number] += num_rec_read;
+	manager->current_input_file_positions[file_number] += ftell(manager->inputFP);
 	fclose(manager->inputFP);
 	manager->total_input_buffer_elements[file_number] = num_rec_read;
 	return SUCCESS;

@@ -13,6 +13,11 @@
 #define FAILURE 1
 #define EMPTY 2
 
+typedef struct record  {
+ 	int uid1;
+	int uid2;
+} Record;
+
 typedef struct HeapElement {
 	int UID1;
 	int UID2;
