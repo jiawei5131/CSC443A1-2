@@ -2,16 +2,16 @@ CC = gcc
 
 CFLAGS = -g -Wall
 
-all: disk_sort merge_external
+all: disk_sort
+
+merge.o: merge_external.c merge.h
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 %.o: %.c %.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-disk_sort: disk_sort.o utils.o
+disk_sort: utils.o merge.o sortrun.o
 	$(CC) $(CFLAGS) -o $@ $^
-
-merge_external: merge.h merge_external.o
-	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 clean:
 	rm -f *.o 

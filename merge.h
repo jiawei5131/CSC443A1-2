@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils.c"
+#include "utils.h"
 
 #define MAX_PATH_LENGTH 1024
 
@@ -41,10 +41,10 @@ typedef struct merge_manager {
 } MergeManager;
 
 //1. main loop
-int merge_runs (MergeManager * manager, int K); 
+int merge_runs (MergeManager * manager); 
 
 //2. creates and fills initial buffers, initializes heap taking 1 top element from each buffer 
-int init_merge (MergeManager * manager, int k); 
+int init_merge (MergeManager * manager); 
 
 //3. flushes output buffer to disk when full
 int flush_output_buffer (MergeManager * manager); 
