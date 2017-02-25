@@ -228,12 +228,139 @@ void clean_up (MergeManager * merger) {
 }
 
 
-
+/**
+ * Return positive if b->UID2 is smaller than a->UID2
+ **/
 int compare_heap_elements (HeapElement *a, HeapElement *b) {
 	int a_f = a->UID2;
 	int b_f = b->UID2;
 	return (a_f - b_f);
-	return 0;
 }
 
-int main(int argc, char* argv[]){return 0;}
+
+/*======================= Helper functions =======================*/
+
+/**
+ * Return the size of each buffer for phase II
+ **/
+int get_buf_size(int mem_size, int block_size, int K){
+	/* k input buffer and 1 output buffer */
+	int max_buf_size = mem_size / (K + 1);
+	int nblock_per_buf = max_buf_size / block_size;
+
+	if (nblock_per_buf <= 0){
+		return -1;
+	}
+
+	return nblock_per_buf * block_size;
+}
+
+
+/**
+ * Check if the memsize is enough for the structure 
+ **/
+int has_enough_mem(int mem_size, int buf_size, int K){
+	int frag_mem = mem_size - buf_size * (K + 1);
+	int extra_mem = 5 * MB + frag_mem;
+
+	int mem_str_require = sizeof(MergeManager)		// MergeManager
+					+ K * sizeof(HeapElement)	// heap
+					+ K * sizeof(int)		// input_file_numbers
+					+ K * sizeof(int)		// current_input_file_positions
+					+ K * sizeof(int)		// current_input_buffer_positions
+					+ K * sizeof(int);		// total_input_buffer_elements
+
+	return (mem_str_require <= extra_mem);
+}
+
+
+/**
+ * Initialize a MergeManager merger for Phase II
+ * Return SUCCESS or FAILURE
+ **/
+int init_MergeManager(MergeManager *merger, 
+								int total_sort_runs, int mem_size, int block_size){
+	/* K */
+	int K = total_sort_runs;
+	Record **input_buffers;
+
+	/* size of each buffer - aligned with block_size */
+	int buf_size = get_buf_size(mem_size, block_size, K);
+	if (buf_size <= 0){
+		fprintf(stderr, "buffer size\n");
+		return FAILURE;
+	}
+
+	/* check if the bookeeping structure has enough space */
+	if (!has_enough_mem(mem_size, buf_size, K)){
+		fprintf(stderr, "Not enough memory for Phase II\n");
+		return FAILURE;
+	}
+	
+	/* calloc - heap */
+	if ( !(merger->heap = calloc(K, sizeof(HeapElement))) ){
+		fprintf(stderr, "calloc \n");
+		return FAILURE;
+	}
+	merger->current_heap_size = 0;
+	merger->heap_capacity = K;
+
+	/* input_file_numbers */
+	if ( !(merger->input_file_numbers = calloc(K, sizeof(int))) ){
+		fprintf(stderr, "calloc \n");
+		return FAILURE;
+	}
+
+	/* outputFP */
+	if ( !(merger->outputFP = fopen(write_file_path, "wb")) ){
+		fprintf(stderr, "Could not open file %s for writing", write_file_path);
+		return FAILURE;
+	}
+
+	/* output_buffer */
+	if ( !(merger->output_buffer = calloc(1, buf_size)) ){
+		fprintf(stderr, "calloc \n");
+		return FAILURE;
+	}
+
+	merger->current_output_buffer_position = 0;
+	merger->output_buffer_capacity = buf_size;
+
+	/* input_buffers */
+	merger->input_buffers = calloc(K, sizeof(Record*));
+	input_buffers = merger->input_buffers;
+
+	int i;
+	for (i = 0; i < K; i ++){
+		if (! ( input_buffers[i] = calloc(1, buf_size)) ){
+			fprintf(stderr, "calloc \n");
+			return FAILURE;
+		}
+	}
+
+	merger->current_input_file_positions = calloc(K, sizeof(int));
+	if (!merger->current_input_file_positions){
+		fprintf(stderr, "calloc \n");
+		return FAILURE;
+	}
+
+	merger->current_input_buffer_positions = calloc(K, sizeof(int));
+	if (!merger->current_input_buffer_positions){
+		fprintf(stderr, "calloc \n");
+		return FAILURE;
+	}
+
+	merger->total_input_buffer_elements = calloc(K, sizeof(int));
+	if (!merger->total_input_buffer_elements){
+		fprintf(stderr, "calloc \n");
+		return FAILURE;
+	}
+
+	/* file names and input prefix */
+	strcpy(merger->output_file_name, write_file_path);
+	strcpy(merger->input_prefix, INPUT_PREFIX);
+
+	return SUCCESS;
+}
+
+/*======================= Helper Ends =======================*/

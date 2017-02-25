@@ -13,11 +13,6 @@
 #define FAILURE 1
 #define EMPTY 2
 
-typedef struct record  {
- 	int uid1;
-	int uid2;
-} Record;
-
 typedef struct HeapElement {
 	int UID1;
 	int UID2;
@@ -71,5 +66,20 @@ void clean_up (MergeManager * merger);
 
 //9. Application-specific comparison function
 int compare_heap_elements (HeapElement *a, HeapElement *b);
+
+
+/*======================= Helper functions =======================*/
+
+/* Return the size of each buffer for phase II */
+int get_buf_size(int mem_size, int block_size, int K);
+
+/* Check if the memsize is enough for the MergeManager */
+int has_enough_mem(int mem_size, int buf_size, int K);
+
+/* Initialize a MergeManager merger for Phase II */
+int init_MergeManager(MergeManager *merger, 
+								int total_sort_runs, int mem_size, int block_size);
+
+/*========================= Helper Ends =========================*/
 
 #endif

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils.h"
-#include "merge.h"
+
 /**
  * Helper function 
  *
@@ -172,38 +172,6 @@ FILE* get_read_fp(int chunk_id){
 	}
 
 	return fp_read;
-}
-
-/**
- * Return the size of each buffer for phase II
- **/
-int get_buf_size(int mem_size, int block_size, int K){
-	/* k input buffer and 1 output buffer */
-	int max_buf_size = mem_size / (K + 1);
-	int nblock_per_buf = max_buf_size / block_size;
-
-	if (nblock_per_buf <= 0){
-		return -1;
-	}
-
-	return nblock_per_buf * block_size;
-}
-
-/**
- * Check if the memsize is enough for the structure 
- **/
-int has_enough_mem(int mem_size, int buf_size, int K){
-	int frag_mem = mem_size - buf_size * (K + 1);
-	int extra_mem = 5 * MB + frag_mem;
-
-	int mem_str_require = sizeof(MergeManager)		// MergeManager
-					+ K * sizeof(HeapElement)	// heap
-					+ K * sizeof(int)		// input_file_numbers
-					+ K * sizeof(int)		// current_input_file_positions
-					+ K * sizeof(int)		// current_input_buffer_positions
-					+ K * sizeof(int);		// total_input_buffer_elements
-
-	return (mem_str_require <= extra_mem);
 }
 
 
