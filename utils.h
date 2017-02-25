@@ -1,11 +1,18 @@
 #define KB 1024
 #define MB 1024 * 1024
 #define INPUT_PREFIX "dataset/phase1_"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
+
+typedef struct record  {
+ 	int uid1;
+	int uid2;
+} Record;
 
 /* Process the second input argument */
 int get_size_byte(char* param);
-
 
 /* Get size of file */
 long get_file_size(FILE* file);
@@ -24,12 +31,6 @@ FILE* get_write_fp(int chunk_id);
 
 /* Return a pointer for reading file "phase1_[chunk_id]" */
 FILE* get_read_fp(int chunk_id);
-
-/* Return the size of each buffer for phase II */
-int get_buf_size(int mem_size, int block_size, int K);
-
-/* Check if the memsize is enough for the structure */
-int has_enough_mem(int mem_size, int buf_size, int K);
 
 /* Ceil division */
 int ceil_div(int, int);

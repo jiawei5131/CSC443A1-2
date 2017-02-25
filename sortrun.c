@@ -1,4 +1,5 @@
 #include "sortrun.h"
+#include "utils.h"
 
 /**
  * Read a chunk of records from file given chunk_size 
@@ -119,5 +120,5 @@ int sortrun(FILE* fp_read, int mem_size, int block_size){
 	free(chunk_buffer);
 	fclose(fp_read);
 	
-  	return chunk_id;
+  	return (chunk_id - 1);
 }
