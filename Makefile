@@ -10,7 +10,7 @@ merge.o: merge_external.c merge.h
 %.o: %.c %.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-disk_sort: utils.o merge.o sortrun.o
+disk_sort: utils.o merge.o sortrun.o main.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

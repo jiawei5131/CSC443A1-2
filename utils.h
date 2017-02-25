@@ -1,6 +1,9 @@
 #define KB 1024
 #define MB 1024 * 1024
 #define INPUT_PREFIX "dataset/phase1_"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 typedef struct record  {
@@ -10,7 +13,6 @@ typedef struct record  {
 
 /* Process the second input argument */
 int get_size_byte(char* param);
-
 
 /* Get size of file */
 long get_file_size(FILE* file);

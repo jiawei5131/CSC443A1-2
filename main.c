@@ -1,8 +1,9 @@
-#include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include "merge.h"
 #include "sortrun.h"
 
-char *write_file_path = "dataset/phase_2.dat";
+char *output_fpath = "dataset/phase_2.dat";
 
 
 int main (int argc, char **argv) {
@@ -53,7 +54,7 @@ int main (int argc, char **argv) {
 
 	/* initialize */
 	total_sort_runs = max_chunk_id + 1; // chunk_id starts from 0
-	if (init_MergeManager(merger, total_sort_runs, mem_size, block_size) == FAILURE){
+	if (init_MergeManager(merger, total_sort_runs, mem_size, block_size, output_fpath) == FAILURE){
 		return FAILURE;
 	}
 	

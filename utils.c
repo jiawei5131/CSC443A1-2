@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "utils.h"
 
 /**
@@ -140,8 +137,11 @@ char* int_to_string(int K){
  **/
 FILE* get_write_fp(int chunk_id){
 	FILE* fp_write;
+
+	/* get file path */
+	char write_file_path[1024] = INPUT_PREFIX;
 	char* chunk_id_str = int_to_string(chunk_id);
-	char* write_file_path = strcat(INPUT_PREFIX, chunk_id_str);
+	strcat(write_file_path, chunk_id_str);
 	free(chunk_id_str);
 
 	/* open for write */
@@ -161,8 +161,11 @@ FILE* get_write_fp(int chunk_id){
  **/
 FILE* get_read_fp(int chunk_id){
 	FILE* fp_read;
+
+	/* get file path */
+	char read_file_path[1024] = INPUT_PREFIX;
 	char* chunk_id_str = int_to_string(chunk_id);
-	char* read_file_path = strcat(INPUT_PREFIX, chunk_id_str);
+	strcat(read_file_path, chunk_id_str);
 	free(chunk_id_str);
 
 	/* open for reading */

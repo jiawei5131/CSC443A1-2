@@ -78,7 +78,10 @@ int has_enough_mem(int mem_size, int buf_size, int K);
 
 /* Initialize a MergeManager merger for Phase II */
 int init_MergeManager(MergeManager *merger, 
-								int total_sort_runs, int mem_size, int block_size);
+					  int total_sort_runs, 
+					  int mem_size, 
+					  int block_size,
+					  char* output_fpath);
 
 /*========================= Helper Ends =========================*/
 
