@@ -202,21 +202,21 @@ int get_next_input_element(MergeManager * manager, int file_number, Record *resu
 	/*Takes next element in input buffers and insert into heap*/
 	
 	//Checks if input_buffer[file_number] is empty
-	if(manager->total_input_buffer_elements[file_number] == 0){
+	if((manager->total_input_buffer_elements[file_number]-1) == manager->current_input_buffer_positions[file_number]){
 		//load from file and update record-keeping variables
-		refill_buffer(manager, file_number);
+		if(refill_buffer(manager, file_number)==0){
+			//no more records to be read from this file
+			return 0;		
+		}
 	}
 	
 	//store input element in result
 	result = &(manager->input_buffers[file_number][manager->current_input_buffer_positions[file_number]]);
-	Record* input = (Record*) malloc(sizeof(Record));
-	input->uid1 = result->uid1;
-	input->uid2 = result->uid2;
+
 	//insert copy into heap
-	insert_into_heap(manager, file_number, input);
+	insert_into_heap(manager, file_number, result);
 	//update record-keeping variables
 	manager->current_input_buffer_positions[file_number] += 1;
-	manager->total_input_buffer_elements[file_number] -= 1;
 	free(result);
 	
 	return SUCCESS;
@@ -230,8 +230,14 @@ int refill_buffer (MergeManager * manager, int file_number) {
 	int num_rec_read = 0;
 	manager->current_input_buffer_positions[file_number] = 0;
 	manager->inputFP = get_read_fp(file_number);
-	
+	int eof;
+	fseek(manager->inputFP, 0, SEEK_END); // seek to the the end of file
+	eof = ftell(manager->inputFP);
+	rewind(manager->inputFP);         
 	//set file pointer to the correct position
+	if(eof <=  manager->current_input_file_positions[file_number]){
+		return 0;
+	}
 	fseek(manager->inputFP, manager->current_input_file_positions[file_number]*sizeof(Record), SEEK_SET);
 	if ((num_rec_read = fread(manager->input_buffers[file_number], sizeof(Record), manager->input_buffer_capacity, manager->inputFP))==0){
 			fprintf(stderr, "Reading from file failed \n");
@@ -239,7 +245,7 @@ int refill_buffer (MergeManager * manager, int file_number) {
 	}
 	
 	//update position in the file
-	manager->current_input_file_positions[file_number] += ftell(manager->inputFP);
+	manager->current_input_file_positions[file_number] = ftell(manager->inputFP);
 	fclose(manager->inputFP);
 	manager->total_input_buffer_elements[file_number] = num_rec_read;
 	return SUCCESS;
@@ -247,18 +253,25 @@ int refill_buffer (MergeManager * manager, int file_number) {
 
 
 
+
 void clean_up (MergeManager * merger) {
 	//not sure if I did this part right
-	free(merger->inputFP);
+	free(merger->heap);
+	free(merger->input_file_numbers);
 	fclose(merger->outputFP);
 	free(merger->outputFP);
-	free(merger->input_buffers);
 	free(merger->output_buffer);
-	free(merger->input_file_numbers);
+	
+	int i;
+	for (i=0; i<merger->heap_capacity; i++){
+			free(merger->input_buffers[i]);
+	}
+	free(merger->input_buffers);
+	
 	free(merger->current_input_file_positions);
 	free(merger->current_input_buffer_positions);
 	free(merger->total_input_buffer_elements);
-	free(merger->heap);
+	free(merger);
 }
 
 
