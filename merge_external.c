@@ -128,49 +128,37 @@ int insert_into_heap (MergeManager * merger, int run_id, Record *input){
 int init_merge (MergeManager * manager) {
 	/* read each run into its corresponding input_buffer */
 	int K = manager->heap_capacity;
-	int input_buffer_capacity = manager->input_buffer_capacity;
+	Record head;
+	int result;
 
 	/* load each run */
 	int chunk_id;
 	for (chunk_id = 0; chunk_id < K; chunk_id ++){
-		/* read file according to chunk_id */
-		if ( !(manager->inputFP = get_read_fp(chunk_id)) ){
-			fprintf(stderr, "init_merge: get read fp.\n");
-			return FAILURE;
-		}
-
 		/* fill input_file_number */
 		manager->input_file_numbers[chunk_id] = chunk_id;
 
 		/* read records into chunk_id input_buffer */
-		int num_rec_read = fread(manager->input_buffers[chunk_id], 
-				  				 sizeof(Record), 
-				  				 input_buffer_capacity, 
-				  				 manager->inputFP);
-		
-		if ( (num_rec_read != input_buffer_capacity) 
-							&& !feof(manager->inputFP)){
-			fprintf(stderr, "fread from \"phase1_%d\" \n", chunk_id);
+		result = refill_buffer(manager, chunk_id);
+
+		if (result == FAILURE || result == EMPTY){
+			fprintf(stderr, "init_merge: refill buffer.\n");
 			return FAILURE;
 		}
-		manager->current_input_buffer_positions[chunk_id] = 0;
 
 		/* insert the head of input_buffer to heap */
-		if (insert_into_heap (manager, chunk_id, manager->input_buffers[chunk_id]) == FAILURE){
-			fprintf(stderr, "init_merge: insert head into heap.\n");
+		result = get_next_input_element (manager, chunk_id, &head);
+
+		if (result == FAILURE){
+			fprintf(stderr, "init_merge: get head input element.\n");
 			return FAILURE;
 		}
-		manager->current_input_buffer_positions[chunk_id]++;	// head inserted
 
-		/* save the position for next read */
-		manager->current_input_file_positions[chunk_id] = ftell(manager->inputFP);
-		if (feof(manager->inputFP)){
-			manager->current_input_file_positions[chunk_id] = -1;	
+		if(result == SUCCESS) {
+			if(insert_into_heap (manager, chunk_id, &head) == FAILURE){
+				fprintf(stderr, "init_merge: insert head into heap.\n");
+				return FAILURE;
+			}
 		}
-
-		manager->total_input_buffer_elements[chunk_id] = num_rec_read;
-
-		fclose(manager->inputFP);
 	}
 
 	return SUCCESS;
@@ -236,7 +224,7 @@ int refill_buffer (MergeManager * manager, int file_number) {
 	}
 
 	manager->inputFP = get_read_fp(file_number);
-	if (!merger->inputFP){
+	if (!(manager->inputFP)){
 		return FAILURE;
 	}
 	
@@ -266,7 +254,7 @@ int refill_buffer (MergeManager * manager, int file_number) {
 
 void clean_up (MergeManager * merger) {
 	free(merger->heap);
-	free(merge->input_file_numbers);
+	free(merger->input_file_numbers);
 	fclose(merger->outputFP);
 	free(merger->output_buffer);
 

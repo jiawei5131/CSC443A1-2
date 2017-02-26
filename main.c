@@ -3,7 +3,7 @@
 #include "merge.h"
 #include "sortrun.h"
 
-char *output_fpath = "dataset/phase_2.dat";
+char *output_fpath = "dataset/phase2_result.dat";
 
 
 int main (int argc, char **argv) {
