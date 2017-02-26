@@ -142,19 +142,16 @@ int init_merge (MergeManager * manager) {
 		/* fill input_file_number */
 		manager->input_file_numbers[chunk_id] = chunk_id;
 
-		int num_rec_read;
 		/* read records into chunk_id input_buffer */
-		if ( (num_rec_read = fread(manager->input_buffers[chunk_id], 
-				  sizeof(Record), 
-				  input_buffer_capacity, 
-				  manager->inputFP)) != input_buffer_capacity){
-			if (!feof(manager->inputFP)){
-				fprintf(stderr, "fread from \"phase1_%d\" \n", chunk_id);
-				return FAILURE;
-			} else {
-				/* end of file */
-				printf("Exhausted: \"phase1_%d\" \n", chunk_id);
-			}
+		int num_rec_read = fread(manager->input_buffers[chunk_id], 
+				  				 sizeof(Record), 
+				  				 input_buffer_capacity, 
+				  				 manager->inputFP);
+		
+		if ( (num_rec_read != input_buffer_capacity) 
+							&& !feof(manager->inputFP)){
+			fprintf(stderr, "fread from \"phase1_%d\" \n", chunk_id);
+			return FAILURE;
 		}
 		manager->current_input_buffer_positions[chunk_id] = 0;
 
@@ -183,11 +180,9 @@ int flush_output_buffer (MergeManager * manager) {
 	Record* buffer= manager->output_buffer;
 	FILE* outputFP = manager->outputFP;
 
-	if (position == capacity){
-		if(fwrite(buffer, sizeof(Record), capacity, outputFP) == 0){
-			fprintf(stderr, "writing to output failed \n");
-			return FAILURE;
-		}
+	if(fwrite(buffer, sizeof(Record), capacity, outputFP) == 0){
+		fprintf(stderr, "writing to output failed \n");
+		return FAILURE;
 	}
 
 	//reset output buffer after flush
@@ -248,17 +243,24 @@ int refill_buffer (MergeManager * manager, int file_number) {
 
 
 void clean_up (MergeManager * merger) {
-	//not sure if I did this part right
-	free(merger->inputFP);
+	free(merger->heap);
+	free(merge->input_file_numbers);
 	fclose(merger->outputFP);
-	free(merger->outputFP);
-	free(merger->input_buffers);
 	free(merger->output_buffer);
-	free(merger->input_file_numbers);
+
+	/* free all input buffers */
+	int i;
+	for (i = 0; i < merger->heap_capacity; i ++){
+		free(merger->input_buffers[i]);	
+	}
+	free(merger->input_buffers);
+	
 	free(merger->current_input_file_positions);
 	free(merger->current_input_buffer_positions);
 	free(merger->total_input_buffer_elements);
-	free(merger->heap);
+	
+	/* free MergeManager */
+	free(merger);
 }
 
 
@@ -283,6 +285,7 @@ int get_buf_size(int mem_size, int block_size, int K){
 	int nblock_per_buf = max_buf_size / block_size;
 
 	if (nblock_per_buf <= 0){
+		fprintf(stderr, "buffer cannot hold at least 1 block\n");
 		return -1;
 	}
 
@@ -320,13 +323,16 @@ int init_MergeManager(MergeManager *merger,
 	/* K */
 	int K = total_sort_runs;
 	Record **input_buffers;
+	int num_rec_per_buf, buf_size;
 
 	/* size of each buffer - aligned with block_size */
-	int buf_size = get_buf_size(mem_size, block_size, K);
+	buf_size = get_buf_size(mem_size, block_size, K);
 	if (buf_size <= 0){
 		fprintf(stderr, "buffer size\n");
 		return FAILURE;
 	}
+	
+	num_rec_per_buf = buf_size / sizeof(Record);
 
 	/* check if the bookeeping structure has enough space */
 	if (!has_enough_mem(mem_size, buf_size, K)){
@@ -355,13 +361,13 @@ int init_MergeManager(MergeManager *merger,
 	}
 
 	/* output_buffer */
-	if ( !(merger->output_buffer = calloc(1, buf_size)) ){
+	if ( !(merger->output_buffer = calloc(num_rec_per_buf, sizeof(Record))) ){
 		fprintf(stderr, "calloc \n");
 		return FAILURE;
 	}
 
 	merger->current_output_buffer_position = 0;
-	merger->output_buffer_capacity = buf_size;
+	merger->output_buffer_capacity = num_rec_per_buf;
 
 	/* input_buffers */
 	merger->input_buffers = calloc(K, sizeof(Record*));
@@ -369,11 +375,12 @@ int init_MergeManager(MergeManager *merger,
 
 	int chunk_id;
 	for (chunk_id = 0; chunk_id < K; chunk_id ++){
-		if (! ( input_buffers[chunk_id] = calloc(1, buf_size)) ){
+		if (! ( input_buffers[chunk_id] = calloc(num_rec_per_buf, sizeof(Record))) ){
 			fprintf(stderr, "calloc \n");
 			return FAILURE;
 		}
 	}
+	merger->input_buffer_capacity = num_rec_per_buf;
 
 	merger->current_input_file_positions = calloc(K, sizeof(int));
 	if (!merger->current_input_file_positions){
