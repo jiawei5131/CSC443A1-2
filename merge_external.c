@@ -162,7 +162,12 @@ int init_merge (MergeManager * manager) {
 		}
 		manager->current_input_buffer_positions[chunk_id]++;	// head inserted
 
+		/* save the position for next read */
 		manager->current_input_file_positions[chunk_id] = ftell(manager->inputFP);
+		if (feof(manager->inputFP)){
+			manager->current_input_file_positions[chunk_id] = -1;	
+		}
+
 		manager->total_input_buffer_elements[chunk_id] = num_rec_read;
 
 		fclose(manager->inputFP);
@@ -174,18 +179,19 @@ int init_merge (MergeManager * manager) {
 
 
 int flush_output_buffer (MergeManager * manager) {
-	/* flush the buffer to output file */
 	int position = manager->current_output_buffer_position;
-	int capacity = manager->output_buffer_capacity;
 	Record* buffer= manager->output_buffer;
 	FILE* outputFP = manager->outputFP;
 
-	if(fwrite(buffer, sizeof(Record), capacity, outputFP) == 0){
+	if(fwrite(buffer, sizeof(Record), position, outputFP) == 0){
 		fprintf(stderr, "writing to output failed \n");
 		return FAILURE;
 	}
 
-	//reset output buffer after flush
+	/* flush */
+	fflush(outputFP);
+
+	/* reset */
 	manager->current_output_buffer_position = 0;
 
 	return SUCCESS;
@@ -194,25 +200,25 @@ int flush_output_buffer (MergeManager * manager) {
 
 
 int get_next_input_element(MergeManager * manager, int file_number, Record *result) {
-	/*Takes next element in input buffers and insert into heap*/
-	
+
 	//Checks if input_buffer[file_number] is empty
-	if(manager->total_input_buffer_elements[file_number] == 0){
+	if((manager->total_input_buffer_elements[file_number]-1) == manager->current_input_buffer_positions[file_number]){
 		//load from file and update record-keeping variables
-		refill_buffer(manager, file_number);
+		int refill_result = refill_buffer(manager, file_number);
+
+		if(refill_result == EMPTY){
+			return EMPTY;	
+		} else if (refill_result == FAILURE){
+			fprintf(stderr, "get_next_input_element: refill_buffer \n");
+			return FAILURE;
+		}
 	}
 	
 	//store input element in result
-	result = &(manager->input_buffers[file_number][manager->current_input_buffer_positions[file_number]]);
-	Record* input = (Record*) malloc(sizeof(Record));
-	input->uid1 = result->uid1;
-	input->uid2 = result->uid2;
-	//insert copy into heap
-	insert_into_heap(manager, file_number, input);
+	*result = manager->input_buffers[file_number][manager->current_input_buffer_positions[file_number]];
+
 	//update record-keeping variables
-	manager->current_input_buffer_positions[file_number] += 1;
-	manager->total_input_buffer_elements[file_number] -= 1;
-	free(result);
+	manager->current_input_buffer_positions[file_number] ++;
 	
 	return SUCCESS;
 }
@@ -220,25 +226,41 @@ int get_next_input_element(MergeManager * manager, int file_number, Record *resu
 
 
 int refill_buffer (MergeManager * manager, int file_number) {
-	/*fill input buffer with records from given file and file position.*/
-	//char input_file_name[MAX_PATH_LENGTH];
-	int num_rec_read = 0;
-	manager->current_input_buffer_positions[file_number] = 0;
+	int num_rec_read;
+	int capacity = manager->input_buffer_capacity;
+	int position = manager->current_input_file_positions[file_number];
+
+	/* input file exhausted */
+	if (position == -1){
+		return EMPTY;
+	}
+
 	manager->inputFP = get_read_fp(file_number);
+	if (!merger->inputFP){
+		return FAILURE;
+	}
 	
-	//set file pointer to the correct position
-	fseek(manager->inputFP, manager->current_input_file_positions[file_number]*sizeof(Record), SEEK_SET);
-	if ((num_rec_read = fread(manager->input_buffers[file_number], sizeof(Record), manager->input_buffer_capacity, manager->inputFP))==0){
-			fprintf(stderr, "Reading from file failed \n");
+	/* seek the right position to read */
+	fseek(manager->inputFP, position, SEEK_SET);
+	num_rec_read = fread(manager->input_buffers[file_number], sizeof(Record), capacity, manager->inputFP);
+	if (num_rec_read != capacity && !feof(manager->inputFP)){
+			fprintf(stderr, "refill_buffer: Reading from file failed \n");
 			return FAILURE;
 	}
 	
 	//update position in the file
-	manager->current_input_file_positions[file_number] += ftell(manager->inputFP);
+	manager->current_input_file_positions[file_number] = ftell(manager->inputFP);
+	if (feof(manager->inputFP)){
+		manager->current_input_file_positions[file_number] = -1;
+	}
 	fclose(manager->inputFP);
+
+	manager->current_input_buffer_positions[file_number] = 0;
 	manager->total_input_buffer_elements[file_number] = num_rec_read;
+
 	return SUCCESS;
 }
+
 
 
 
