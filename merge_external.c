@@ -26,8 +26,6 @@ int merge_runs (MergeManager * merger){
 		if(result==SUCCESS) {//next element exists, may also return EMPTY
 			if(insert_into_heap (merger, smallest.run_id, &next)!=SUCCESS)
 				return FAILURE;
-		} else if (result==EMPTY){
-			continue;
 		}
 
 
