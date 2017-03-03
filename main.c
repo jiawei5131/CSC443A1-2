@@ -40,6 +40,7 @@ int main (int argc, char **argv) {
 	}
 
 	/* Phase I - sort and write each run on disk */
+
 	max_chunk_id = sortrun(fp_read, mem_size, block_size);
 	if (max_chunk_id < 0){
 		fprintf(stderr, "sortrun \n");

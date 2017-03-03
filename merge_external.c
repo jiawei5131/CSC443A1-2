@@ -26,7 +26,9 @@ int merge_runs (MergeManager * merger){
 		if(result==SUCCESS) {//next element exists, may also return EMPTY
 			if(insert_into_heap (merger, smallest.run_id, &next)!=SUCCESS)
 				return FAILURE;
-		}		
+		} else if (result==EMPTY){
+			continue;
+		}
 
 
 		merger->output_buffer [merger->current_output_buffer_position].uid1=smallest.UID1;
@@ -188,9 +190,8 @@ int flush_output_buffer (MergeManager * manager) {
 
 
 int get_next_input_element(MergeManager * manager, int file_number, Record *result) {
-
 	//Checks if input_buffer[file_number] is empty
-	if((manager->total_input_buffer_elements[file_number]-1) == manager->current_input_buffer_positions[file_number]){
+	if( manager->current_input_buffer_positions[file_number] >= manager->total_input_buffer_elements[file_number] ){
 		//load from file and update record-keeping variables
 		int refill_result = refill_buffer(manager, file_number);
 
@@ -202,6 +203,7 @@ int get_next_input_element(MergeManager * manager, int file_number, Record *resu
 		}
 	}
 	
+
 	//store input element in result
 	*result = manager->input_buffers[file_number][manager->current_input_buffer_positions[file_number]];
 
@@ -231,20 +233,27 @@ int refill_buffer (MergeManager * manager, int file_number) {
 	/* seek the right position to read */
 	fseek(manager->inputFP, position, SEEK_SET);
 	num_rec_read = fread(manager->input_buffers[file_number], sizeof(Record), capacity, manager->inputFP);
-	if (num_rec_read != capacity && !feof(manager->inputFP)){
-			fprintf(stderr, "refill_buffer: Reading from file failed \n");
-			return FAILURE;
-	}
-	
-	//update position in the file
-	manager->current_input_file_positions[file_number] = ftell(manager->inputFP);
-	if (feof(manager->inputFP)){
-		manager->current_input_file_positions[file_number] = -1;
-	}
-	fclose(manager->inputFP);
 
+	if (num_rec_read != capacity && !feof(manager->inputFP)){
+		fprintf(stderr, "refill_buffer: Reading from file failed \n");
+		return FAILURE;
+
+	} else if ( num_rec_read != capacity && feof(manager->inputFP) ){
+		// read 0 element
+		if ( num_rec_read == 0 )
+			return EMPTY;
+
+		manager->current_input_file_positions[file_number] = -1;
+
+	} else {
+		// update position in the file
+		manager->current_input_file_positions[file_number] = ftell(manager->inputFP);
+	}
+
+	// update buffer position and element number 
 	manager->current_input_buffer_positions[file_number] = 0;
 	manager->total_input_buffer_elements[file_number] = num_rec_read;
+	fclose(manager->inputFP);
 
 	return SUCCESS;
 }
